@@ -1,23 +1,25 @@
 import express from "express";
-// import authRouter from "./routes/auth";
-// import handbookRouter from "./routes/handbook";
+import authRouter from "./routes/auth.js";
+import sectionRouter from "./routes/sections.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
 const app = express();
 
+const CLIENT_URL = process.env.CLIENT_URL;
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: CLIENT_URL,
     credentials: true,
   }),
 );
 
 // routes
-// app.use("/auth", authRouter);
-// app.use("/handbook", handbookRouter);
+app.use("/auth", authRouter);
+app.use("/sections", sectionRouter);
 
 app.get("/", (req, res) => {
   res.send({

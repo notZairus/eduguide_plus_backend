@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { loginSchema, resgisterSchema } from "../validators/auth";
-import User from "../models/User";
+import { loginSchema, resgisterSchema } from "../validators/auth.js";
+import User from "../models/User.js";
 import {
   compareHashedPassword,
   generateAcessToken,
   generateRefreshToken,
-} from "../lib/helpers";
+} from "../lib/helpers.js";
 import jwt from "jsonwebtoken";
 
 const router = Router();
