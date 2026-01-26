@@ -1,12 +1,11 @@
 import mongoose from "mongoose";
 
 
-const sectionSchema = new mongoose.Schema({
+const subSectionSchema = new mongoose.Schema({
   title: {
     type: String,
-    trim: true,
-    required: true,
-    minLength: 4,
+    trin: true,
+    minLength: 3,
   },
   contentType: {
     type: String,
@@ -21,10 +20,6 @@ const sectionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Item",
   }],
-  subsections_id: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "SubSection",
-  }],
   tables_id: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Table",
@@ -32,4 +27,4 @@ const sectionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-export default mongoose.model("Section", sectionSchema);
+export default mongoose.model("SubSection", subSectionSchema);

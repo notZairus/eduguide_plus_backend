@@ -1,5 +1,5 @@
 import z from "zod";
 
-export const createSectionSchema = z.object({
+export const createTopicSchema = z.object({
   title: z.string().min(4),
 });

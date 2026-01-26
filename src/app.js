@@ -1,6 +1,6 @@
 import express from "express";
 import authRouter from "./routes/auth.js";
-import sectionRouter from "./routes/sections.js";
+import sectionRouter from "./routes/topics.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -19,7 +19,7 @@ app.use(
 
 // routes
 app.use("/auth", authRouter);
-app.use("/sections", sectionRouter);
+app.use("/topics", sectionRouter);
 
 app.get("/", (req, res) => {
   res.send({
