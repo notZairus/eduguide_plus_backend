@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Topic from "./Topic.js";
 
 
 const sectionSchema = new mongoose.Schema({
@@ -8,28 +9,23 @@ const sectionSchema = new mongoose.Schema({
     required: true,
     minLength: 4,
   },
-  contentType: {
-    type: String,
-    enum: ['paragraph', 'numbered-list', 'bulleted-list', 'table'],
-    required: true,
-  },
   content: {
-    type: String,
-    minLenght: 24,
+    type: mongoose.Schema.Types.Mixed,
+    required: false
   },
-  items_id: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Item",
-  }],
-  subsections_id: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "SubSection",
-  }],
-  tables_id: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Table",
-  }],
+  order: {
+    type: Number,
+    required: true
+  }
 }, { timestamps: true });
 
+sectionSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    await Topic.updateMany(
+      { sections: doc._id },
+      { $pull: { sections: doc._id } }
+    );
+  }
+});
 
 export default mongoose.model("Section", sectionSchema);

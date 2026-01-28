@@ -12,7 +12,7 @@ const topicSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    section_id: [
+    sections: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Section",
@@ -21,5 +21,14 @@ const topicSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+topicSchema.pre("findOneAndDelete", async function () {
+  const topic = await this.model.findOne(this.getQuery());
+  if (topic) {
+    await mongoose.model("Section").deleteMany({
+      _id: { $in: topic.sections },
+    });
+  }
+});
 
 export default mongoose.model("Topic", topicSchema);

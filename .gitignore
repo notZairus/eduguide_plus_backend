@@ -9,3 +9,6 @@ dist
 
 logs
 *.log
+
+
+gitdiff.*
