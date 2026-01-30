@@ -5,6 +5,18 @@ import Topic from "../models/Topic.js";
 
 const router = Router();
 
+router.get("/:id", async (req, res) => {
+  const sectionId = req.params.id;
+
+  const section = await Section.findOne({ _id: sectionId });
+
+  if (!section) return res.status(200).send({ message: "section not found!" });
+
+  return res.status(200).send({ 
+    section
+  })
+})
+
 router.post("/", async (req, res) => {
   console.log("hello from sections post.")
   const validationResult = createSectionSchema.safeParse(req.body);

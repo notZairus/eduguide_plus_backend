@@ -11,7 +11,6 @@ const sectionSchema = new mongoose.Schema({
   },
   content: {
     type: mongoose.Schema.Types.Mixed,
-    required: false
   },
   order: {
     type: Number,

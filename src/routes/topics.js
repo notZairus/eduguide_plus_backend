@@ -13,6 +13,14 @@ router.get("/", async (req, res) => {
     topics: []
   });
 
+  for (let i = 0; i < topics.length; i++) {
+    const sections = topics[i].sections;
+    if (sections.length > 0) {
+      const sortedSections = sections.sort((a, b) => a.order - b.order);
+      topics[i].sections = sortedSections; 
+    }
+  }
+
   return res.status(200).json({
     topics: topics.sort((a, b) => a.order - b.order),
   })
