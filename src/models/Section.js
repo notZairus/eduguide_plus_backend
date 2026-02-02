@@ -12,6 +12,18 @@ const sectionSchema = new mongoose.Schema({
   content: {
     type: mongoose.Schema.Types.Mixed,
   },
+  medias: [{
+    url: {
+      type: String,
+    },
+    public_id: {
+      type: String,
+    },
+    type: {
+      type: String,
+      enum: ["image", "video"]
+    }
+  }],
   order: {
     type: Number,
     required: true

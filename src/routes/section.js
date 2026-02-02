@@ -2,6 +2,9 @@ import { Router } from "express";
 import { createSectionSchema } from "../validators/handbook.js";
 import Section from "../models/Section.js";
 import Topic from "../models/Topic.js";
+import { upload } from "../lib/upload.js"; 
+import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 
 const router = Router();
 
@@ -18,7 +21,6 @@ router.get("/:id", async (req, res) => {
 })
 
 router.post("/", async (req, res) => {
-  console.log("hello from sections post.")
   const validationResult = createSectionSchema.safeParse(req.body);
 
   if (!validationResult.success) {
@@ -42,15 +44,44 @@ router.post("/", async (req, res) => {
   })
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", upload.array("files"), async (req, res) => {
   const sectionId = req.params.id;
-  const { body } = req;
-  
+  const body = req.body;
+  const files = req.files;
+
   const section = await Section.findById(sectionId);
-  
+
+  const currentMedias = section.medias;
+  const updatedMedias = JSON.parse(body.medias).map(media => media.url);
+
+  for (const media of currentMedias) {
+    if (!updatedMedias.includes(media.url)) {
+      await cloudinary.uploader.destroy(media.public_id, function(error, result) {
+        console.log(result, error);
+      });
+    }
+  }
+
   Object.keys(body).forEach(key => {
-    section[key] = body[key];
-  })
+    section[key] = ["medias", "content"].includes(key) ? JSON.parse(body[key]) : body[key];
+  });
+
+  for (const file of files) {
+    const result = await cloudinary.uploader.upload(file.path, {
+      folder: "EduGuide+/medias",
+      resource_type: "auto",
+    })
+      
+    section.medias.push({ 
+      url: result.secure_url, 
+      public_id: result.public_id,
+      type: result.resource_type
+    });
+    
+    fs.unlink(file.path, (err) => {
+      if (err) console.error("Failed to delete file:", err);
+    });
+  }  
 
   const updatedSection = await section.save();
   
