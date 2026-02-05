@@ -4,7 +4,8 @@ import cors from "cors";
 
 import authRouter from "./routes/auth.js";
 import topicsRouter from "./routes/topics.js";
-import sectionsRouter from "./routes/section.js";
+import sectionsRouter from "./routes/sections.js";
+import questionsRouter from "./routes/questions.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(
 app.use("/auth", authRouter);
 app.use("/topics", topicsRouter);
 app.use("/sections", sectionsRouter);
+app.use("/questions", questionsRouter);
 
 app.get("/", (req, res) => {
   res.send({

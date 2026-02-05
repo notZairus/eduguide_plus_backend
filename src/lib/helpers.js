@@ -19,3 +19,18 @@ export function generateRefreshToken(user) {
     expiresIn: "7d",
   });
 }
+
+export function getAuthenticatedId(req) {
+  const accessToken = req.cookies.accessToken;
+    
+  if (!accessToken) {
+    return res.sendStatus(401);
+  }
+
+  const payload = jwt.verify(
+    accessToken,
+    process.env.ACCESS_TOKEN_SECRET,
+  );
+
+  return payload.userId;
+}

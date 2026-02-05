@@ -60,6 +60,39 @@ router.get("/logout", async (req, res) => {
   return res.sendStatus(200);
 });
 
+
+router.post("/register", async (req, res) => {
+  const validationResult = resgisterSchema.safeParse(req.body);
+
+  if (!validationResult.success) {
+    console.log(validationResult.error.format())
+    return res.status(400).send({
+      errors: validationResult.error.format(),
+    });
+  }
+
+  const data = validationResult.data;
+
+  const user = new User({
+    email: data.email,
+    password: data.password,
+    first_name: data.firstName,
+    middle_name: data.firstName,
+    last_name: data.lastName,
+    is_admin: false,
+  });
+
+  const newUser = await user.save();
+
+  return res.status(200).send({
+    user: {
+      id: user.id,
+    },
+    message: "successful!",
+  });
+});
+
+
 router.get("/me", async (req, res) => {
   const accessToken = req.cookies.accessToken;
 
@@ -127,35 +160,5 @@ export default router;
 
 //   return res.status(200).json({
 //     message: "token refreshed",
-//   });
-// });
-
-// router.post("/register", async (req, res) => {
-//   const validationResult = resgisterSchema.safeParse(req.body);
-
-//   if (!validationResult.success) {
-//     return res.status(400).send({
-//       errors: validationResult.error.format(),
-//     });
-//   }
-
-//   const data = validationResult.data;
-
-//   const user = new User({
-//     email: data.email,
-//     password: data.password,
-//     first_name: data.firstName,
-//     middle_name: data.firstName,
-//     last_name: data.lastName,
-//     is_admin: false,
-//   });
-
-//   const newUser = await user.save();
-
-//   return res.status(200).send({
-//     user: {
-//       id: user.id,
-//     },
-//     message: "successful!",
 //   });
 // });

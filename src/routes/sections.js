@@ -51,6 +51,14 @@ router.patch("/:id", upload.array("files"), async (req, res) => {
 
   const section = await Section.findById(sectionId);
 
+  if (body.title) {
+    section.title = body.title;
+    const updatedSection = await section.save();
+    return res.status(200).send({
+      section: updatedSection
+    })
+  }
+
   const currentMedias = section.medias;
   const updatedMedias = JSON.parse(body.medias).map(media => media.url);
 
@@ -68,7 +76,7 @@ router.patch("/:id", upload.array("files"), async (req, res) => {
 
   for (const file of files) {
     const result = await cloudinary.uploader.upload(file.path, {
-      folder: "EduGuide+/medias",
+      folder: "EduGuide+/sections",
       resource_type: "auto",
     })
       

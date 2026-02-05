@@ -1,13 +1,18 @@
 import { Router } from "express";
 import { createTopicSchema } from "../validators/handbook.js";
 import Topic from "../models/Topic.js";
+import { getAuthenticatedId } from "../lib/helpers.js";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
-  const topics = await Topic.find()
+  const userId = getAuthenticatedId(req);
+
+  const topics = await Topic.find({ user_id: userId })
     .populate("sections")
     .sort({ order: 1 });
+
+  console.log(topics)
 
   if (!topics) return res.json({
     topics: []
@@ -29,17 +34,17 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const validationResult = createTopicSchema.safeParse(req.body);
 
-  if (!validationResult.success) {
-    return res.status(400).send({
-      errors: validationResult.error.format(),
-    });
-  }
+  const userId = getAuthenticatedId(req);
 
   const data = validationResult.data;
 
   const topics = await Topic.find();
 
-  const newTopic = await Topic.create({ title: data.title, order: topics.length + 1 });
+  const newTopic = await Topic.create({ 
+    title: data.title, 
+    order: topics.length + 1, 
+    user_id: userId 
+  });
 
   return res.status(201).send({
     topic: newTopic
