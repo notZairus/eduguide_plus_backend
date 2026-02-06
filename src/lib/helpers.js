@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { response } from "express";
 
 export async function compareHashedPassword(
   plainText,
@@ -24,7 +25,7 @@ export function getAuthenticatedId(req) {
   const accessToken = req.cookies.accessToken;
     
   if (!accessToken) {
-    return res.sendStatus(401);
+    return response.sendStatus(401);
   }
 
   const payload = jwt.verify(

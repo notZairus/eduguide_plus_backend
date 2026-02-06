@@ -4,12 +4,12 @@ import Question from "../models/Question.js";
 import { createQuestionValidator } from "../validators/questions.validator.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import { getAuthenticatedId } from "../lib/helpers.js";
 
 
 const router = Router();
 
 router.post("/", upload.single("file"), async (req, res) => {
-  console.log("hello from questions post");
   const { body, file } = req;
 
   const validationResult = createQuestionValidator.safeParse(body);
@@ -21,8 +21,10 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 
   const data = validationResult.data;
+  const userId = getAuthenticatedId(req); 
 
   const newQuestion = new Question({
+    user_id: userId,
     topic_id: data.topicId,
     section_id: data.sectionId,
     type: data.type,
@@ -53,11 +55,30 @@ router.post("/", upload.single("file"), async (req, res) => {
     }
   }
 
-  const question = await newQuestion.save();
+  const savedQuestion = await newQuestion.save();
+  const question = await Question.findOne({ _id: savedQuestion._id }).populate("section_id").populate("topic_id");
 
   return res.status(200).send({
     message: "successful!",
     question: question,
+  })
+})
+
+router.get("/", async (req, res) => {
+  const userId = getAuthenticatedId(req);
+  const questions = await Question.find({ user_id: userId }).populate("section_id").populate("topic_id");
+
+  return res.status(200).send({
+    message: "successful!",
+    questions: questions,
+  })
+})
+
+router.delete("/:id", async (req, res) => {
+  const questionId = req.params.id;
+  await Question.findOneAndDelete({ _id: questionId });
+  return res.status(200).send({
+    message: "Deleted successfully."
   })
 })
 

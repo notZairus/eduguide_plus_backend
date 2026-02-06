@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createTopicSchema } from "../validators/handbook.js";
+import { createTopicSchema } from "../validators/handbook.validator.js";
 import Topic from "../models/Topic.js";
 import { getAuthenticatedId } from "../lib/helpers.js";
 
@@ -11,8 +11,6 @@ router.get("/", async (req, res) => {
   const topics = await Topic.find({ user_id: userId })
     .populate("sections")
     .sort({ order: 1 });
-
-  console.log(topics)
 
   if (!topics) return res.json({
     topics: []
@@ -30,6 +28,33 @@ router.get("/", async (req, res) => {
     topics: topics.sort((a, b) => a.order - b.order),
   })
 })
+
+router.get("/:id", async (req, res) => {
+
+  console.log("called");
+  try {
+    const userId = getAuthenticatedId(req);
+    const { id } = req.params;
+
+    const topic = await Topic.findOne({
+      _id: id,
+      user_id: userId
+    }).populate("sections");
+
+    if (!topic) {
+      return res.status(404).json({ message: "Topic not found" });
+    }
+
+    if (topic.sections?.length) {
+      topic.sections.sort((a, b) => a.order - b.order);
+    }
+
+    return res.status(200).json({ topic });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 router.post("/", async (req, res) => {
   const validationResult = createTopicSchema.safeParse(req.body);

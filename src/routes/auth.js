@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginSchema, resgisterSchema } from "../validators/auth.js";
+import { loginSchema, resgisterSchema } from "../validators/auth.validator.js";
 import User from "../models/User.js";
 import {
   compareHashedPassword,

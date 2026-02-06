@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createSectionSchema } from "../validators/handbook.js";
+import { createSectionSchema } from "../validators/handbook.validator.js";
 import Section from "../models/Section.js";
 import Topic from "../models/Topic.js";
 import { upload } from "../lib/upload.js"; 
