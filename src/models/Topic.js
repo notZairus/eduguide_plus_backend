@@ -31,9 +31,9 @@ const topicSchema = new mongoose.Schema(
 topicSchema.pre("findOneAndDelete", async function () {
   const topic = await this.model.findOne(this.getQuery());
   if (topic) {
-    await mongoose.model("Section").deleteMany({
-      _id: { $in: topic.sections },
-    });
+    for (const sectionId of topic.sections) {
+      await mongoose.model("Section").findOneAndDelete({ _id: sectionId });
+    }
   }
 });
 

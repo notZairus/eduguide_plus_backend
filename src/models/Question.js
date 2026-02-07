@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import { v2 as cloudinary } from "cloudinary";
 
 const questionSchema = new mongoose.Schema({
   question: {
@@ -59,6 +59,14 @@ const questionSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+
+questionSchema.post("findOneAndDelete", async function (doc) {
+  if (doc && doc.media && doc.media.public_id) {
+    await cloudinary.uploader.destroy(doc.media.public_id, function(error, result) {
+      console.log(result, error);
+    });
+  }    
+});
 
 export default mongoose.model("Question", questionSchema);
 

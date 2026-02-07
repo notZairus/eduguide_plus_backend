@@ -8,6 +8,8 @@ import { v2 as cloudinary } from "cloudinary";
 
 const router = Router();
 
+// ROUTES /////////////////////////
+
 router.get("/:id", async (req, res) => {
   const sectionId = req.params.id;
 
@@ -45,6 +47,7 @@ router.post("/", async (req, res) => {
 });
 
 router.patch("/:id", upload.array("files"), async (req, res) => {
+  console.log("PATCH /sections/:id called");
   const sectionId = req.params.id;
   const body = req.body;
   const files = req.files;
@@ -59,6 +62,33 @@ router.patch("/:id", upload.array("files"), async (req, res) => {
     })
   }
 
+  if (body.order) {
+    section.order = body.order;
+    const updatedSection = await section.save();
+    return res.status(200).send({
+      section: updatedSection
+    })
+  }
+
+  if (body.content || body.medias) {
+    const updatedSection = await updateSectionContent(section, body, files);
+    return res.status(200).send({
+      section: updatedSection,
+    })
+  }  
+})
+
+router.delete("/:id", async (req, res) => {
+  const sectionId = req.params.id;
+  await Section.findOneAndDelete({ _id: sectionId });
+  return res.sendStatus(200);
+})
+
+
+
+// HELPER FUNCTIONS /////////////////////////
+
+async function updateSectionContent(section, body, files) {
   const currentMedias = section.medias;
   const updatedMedias = JSON.parse(body.medias).map(media => media.url);
 
@@ -92,16 +122,7 @@ router.patch("/:id", upload.array("files"), async (req, res) => {
   }  
 
   const updatedSection = await section.save();
-  
-  return res.status(200).send({
-    section: updatedSection,
-  })
-})
-
-router.delete("/:id", async (req, res) => {
-  const sectionId = req.params.id;
-  await Section.findOneAndDelete({ _id: sectionId });
-  return res.sendStatus(200);
-})
+  return updatedSection;
+}
 
 export default router;

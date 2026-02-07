@@ -27,11 +27,9 @@ router.get("/", async (req, res) => {
   return res.status(200).json({
     topics: topics.sort((a, b) => a.order - b.order),
   })
-})
+});
 
 router.get("/:id", async (req, res) => {
-
-  console.log("called");
   try {
     const userId = getAuthenticatedId(req);
     const { id } = req.params;
@@ -93,13 +91,13 @@ router.patch("/:id", async (req, res) => {
   return res.status(200).send({
     topic
   });
-})
+});
 
 router.delete("/:id", async (req, res) => {
   const topicId = req.params.id;
   await Topic.findOneAndDelete({ _id: topicId });
   return res.sendStatus(200);
-})
+});
 
 
 
