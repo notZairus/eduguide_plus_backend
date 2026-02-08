@@ -5,7 +5,7 @@ export const loginSchema = z.object({
   password: z.string().trim().min(8).max(32),
 });
 
-export const resgisterSchema = z.object({
+export const registerSchema = z.object({
   email: z
     .string()
     .trim()

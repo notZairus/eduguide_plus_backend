@@ -18,11 +18,9 @@ const topicSchema = new mongoose.Schema(
         ref: "Section",
       }
     ],
-    user_id: {
+    quiz: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true
+      ref: "Quiz",
     }
   },
   { timestamps: true },

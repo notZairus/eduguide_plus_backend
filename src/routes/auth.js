@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginSchema, resgisterSchema } from "../validators/auth.validator.js";
+import { loginSchema, registerSchema } from "../validators/auth.validator.js";
 import User from "../models/User.js";
 import {
   compareHashedPassword,
@@ -7,6 +7,7 @@ import {
   generateRefreshToken,
 } from "../lib/helpers.js";
 import jwt from "jsonwebtoken";
+import Handbook from "../models/Handbook.js";
 
 const router = Router();
 
@@ -62,7 +63,7 @@ router.get("/logout", async (req, res) => {
 
 
 router.post("/register", async (req, res) => {
-  const validationResult = resgisterSchema.safeParse(req.body);
+  const validationResult = registerSchema.safeParse(req.body);
 
   if (!validationResult.success) {
     console.log(validationResult.error.format())
@@ -77,12 +78,19 @@ router.post("/register", async (req, res) => {
     email: data.email,
     password: data.password,
     first_name: data.firstName,
-    middle_name: data.firstName,
+    middle_name: data.middleName,
     last_name: data.lastName,
     is_admin: false,
   });
 
   const newUser = await user.save();
+
+  await Handbook.create({
+    title: "My Handbook",
+    description: "This is a handbook description.",
+    user_id: newUser._id,
+    color: "#276fb5",
+  });
 
   return res.status(200).send({
     user: {
@@ -91,7 +99,6 @@ router.post("/register", async (req, res) => {
     message: "successful!",
   });
 });
-
 
 router.get("/me", async (req, res) => {
   const accessToken = req.cookies.accessToken;

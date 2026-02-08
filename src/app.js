@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import authRouter from "./routes/auth.js";
+import handbookRouter from "./routes/handbooks.js";
 import topicsRouter from "./routes/topics.js";
 import sectionsRouter from "./routes/sections.js";
 import questionsRouter from "./routes/questions.js";
@@ -22,6 +23,7 @@ app.use(
 
 // routes
 app.use("/auth", authRouter);
+app.use("/handbooks", handbookRouter);
 app.use("/topics", topicsRouter);
 app.use("/sections", sectionsRouter);
 app.use("/questions", questionsRouter);

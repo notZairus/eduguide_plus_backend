@@ -56,7 +56,7 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 
   const savedQuestion = await newQuestion.save();
-  const question = await Question.findOne({ _id: savedQuestion._id }).populate("section_id").populate("topic_id");
+  const question = await Question.findOne({ _id: savedQuestion._id })
 
   return res.status(200).send({
     message: "successful!",

@@ -2,15 +2,18 @@ import { Router } from "express";
 import { createTopicSchema } from "../validators/handbook.validator.js";
 import Topic from "../models/Topic.js";
 import { getAuthenticatedId } from "../lib/helpers.js";
+import Handbook from "../models/Handbook.js";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
   const userId = getAuthenticatedId(req);
+  const handbook = await Handbook.findOne({ user_id: userId }).populate({
+    path: "topics",
+    populate: { path: "sections" }
+  });
 
-  const topics = await Topic.find({ user_id: userId })
-    .populate("sections")
-    .sort({ order: 1 });
+  const topics = handbook.topics;
 
   if (!topics) return res.json({
     topics: []
@@ -31,12 +34,10 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const userId = getAuthenticatedId(req);
     const { id } = req.params;
 
     const topic = await Topic.findOne({
       _id: id,
-      user_id: userId
     }).populate("sections");
 
     if (!topic) {
@@ -53,21 +54,29 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-
 router.post("/", async (req, res) => {
   const validationResult = createTopicSchema.safeParse(req.body);
 
   const userId = getAuthenticatedId(req);
+  const handbook = await Handbook.findOne({ user_id: userId });
+
+  if (!handbook) return res.status(404).json({ message: "Handbook not found" });
+
+  if (!validationResult.success) {
+    return res.status(400).json({ errors: validationResult.error.errors });
+  }
 
   const data = validationResult.data;
 
-  const topics = await Topic.find();
-
   const newTopic = await Topic.create({ 
     title: data.title, 
-    order: topics.length + 1, 
+    order: handbook.topics.length + 1, 
     user_id: userId 
   });
+
+  handbook.topics.push(newTopic._id);
+
+  await handbook.save();
 
   return res.status(201).send({
     topic: newTopic
