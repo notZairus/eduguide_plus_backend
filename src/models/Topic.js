@@ -18,7 +18,7 @@ const topicSchema = new mongoose.Schema(
         ref: "Section",
       }
     ],
-    quiz: {
+    active_quiz: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Quiz",
     }

@@ -10,8 +10,8 @@ router.get("/", async (req, res) => {
   const userId = getAuthenticatedId(req);
   const handbook = await Handbook.findOne({ user_id: userId }).populate({
     path: "topics",
-    populate: { path: "sections" }
-  });
+    populate: [{ path: "sections" }, { path: "active_quiz"}]
+  })
 
   const topics = handbook.topics;
 
