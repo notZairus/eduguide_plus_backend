@@ -8,11 +8,11 @@ import {
 } from "../lib/helpers.js";
 import jwt from "jsonwebtoken";
 import Handbook from "../models/Handbook.js";
+import { nanoid } from "nanoid";
 
 const router = Router();
 
 router.post("/login", async (req, res) => {
-  console.log("hello from /login");
   const validationResult = loginSchema.safeParse(req.body);
 
   if (!validationResult.success) {
@@ -52,6 +52,13 @@ router.post("/login", async (req, res) => {
 
   return res.status(200).json({
     message: "successful",
+    user: {
+      id: user._id,
+      firstName: user.first_name,
+      middleName: user.middle_name,
+      lastName: user.last_name,
+      isAdmin: user.is_admin,
+    }
   });
 });
 
@@ -63,6 +70,9 @@ router.get("/logout", async (req, res) => {
 
 
 router.post("/register", async (req, res) => {
+
+  console.log(req.body)
+
   const validationResult = registerSchema.safeParse(req.body);
 
   if (!validationResult.success) {
@@ -86,6 +96,7 @@ router.post("/register", async (req, res) => {
   const newUser = await user.save();
 
   await Handbook.create({
+    code: nanoid(16),
     title: "My Handbook",
     description: "This is a handbook description.",
     user_id: newUser._id,
@@ -119,7 +130,13 @@ router.get("/me", async (req, res) => {
   if (!user) return res.sendStatus(401);
 
   return res.status(200).send({
-    user: user.email,
+    user: {
+      id: user._id,
+      firstName: user.first_name,
+      middleName: user.middle_name,
+      lastName: user.last_name,
+      isAdmin: user.is_admin,
+    }
   });
 });
 

@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 const handbookSchema = new mongoose.Schema({
+  code: {
+    type: String,
+    required: true,
+    minLength: 16,
+  },
   title: {
     type: String,
     required: true,

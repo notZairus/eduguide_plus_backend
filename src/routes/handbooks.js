@@ -79,4 +79,18 @@ router.put("/", upload.fields([{ name: "thumbnail", maxCount: 1 }, { name: "logo
   });
 });
 
+router.post("/code/:code", async (req, res) => {
+  const code = req.params.code;
+
+  let handbook = await Handbook.findOne({ code: code });
+
+  if (!handbook) {
+    return res.status(404).send({
+      message: "Handbook not found",
+    });
+  }
+
+  return res.status(200).send(handbook);
+});
+
 export default router;
