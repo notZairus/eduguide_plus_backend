@@ -82,7 +82,10 @@ router.put("/", upload.fields([{ name: "thumbnail", maxCount: 1 }, { name: "logo
 router.post("/code/:code", async (req, res) => {
   const code = req.params.code;
 
-  let handbook = await Handbook.findOne({ code: code });
+  let handbook = await Handbook.findOne({ code: code }).populate({
+    path: "topics",
+    populate: [{ path: "sections" }, { path: "active_quiz"}]
+  });
 
   if (!handbook) {
     return res.status(404).send({

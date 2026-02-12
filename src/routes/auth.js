@@ -100,7 +100,7 @@ router.post("/register", async (req, res) => {
     title: "My Handbook",
     description: "This is a handbook description.",
     user_id: newUser._id,
-    color: "#276fb5",
+    color: "#142e67",
   });
 
   return res.status(200).send({
