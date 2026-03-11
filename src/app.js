@@ -8,6 +8,7 @@ import topicsRouter from "./routes/topics.js";
 import sectionsRouter from "./routes/sections.js";
 import questionsRouter from "./routes/questions.js";
 import quizRouter from "./routes/quizzes.js";
+import userRouter from "./routes/users.js";
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: ["*", CLIENT_URL],
     credentials: true,
   }),
 );
@@ -29,6 +30,7 @@ app.use("/topics", topicsRouter);
 app.use("/sections", sectionsRouter);
 app.use("/questions", questionsRouter);
 app.use("/quizzes", quizRouter);
+app.use("/users", userRouter);
 
 app.get("/", (req, res) => {
   res.send({

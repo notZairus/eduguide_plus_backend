@@ -41,21 +41,21 @@ router.get("/topics/:id", async (req, res) => {
 
   return res.status(200).send({
     message: "successful!",
-    quizzes: quizzes
-  })
-})
+    quizzes: quizzes,
+  });
+});
 
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
   const topics = await Topic.find({ active_quiz: id });
 
-  await Topic.updateMany({ active_quiz: id }, { $unset: { active_quiz: "" } })
+  await Topic.updateMany({ active_quiz: id }, { $unset: { active_quiz: "" } });
 
   await Quiz.findOneAndDelete({ _id: id });
   return res.status(200).send({
-    message: "deleted successfully!"
-  })
-})
+    message: "deleted successfully!",
+  });
+});
 
 export default router;
