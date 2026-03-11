@@ -20,7 +20,7 @@ export async function compareHashedPassword(plainText, hashedText) {
 
 export function generateAcessToken(user) {
   return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "2h",
   });
 }
 
