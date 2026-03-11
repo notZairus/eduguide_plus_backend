@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { upload } from "../lib/upload.js";
 import Question from "../models/Question.js";
-import { createQuestionValidator, updateQuestionValidator } from "../validators/questions.validator.js";
+import {
+  createQuestionValidator,
+  updateQuestionValidator,
+} from "../validators/questions.validator.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import { getAuthenticatedId } from "../lib/helpers.js";
-
 
 const router = Router();
 
@@ -16,12 +18,12 @@ router.post("/", upload.single("file"), async (req, res) => {
 
   if (!validationResult.success) {
     return res.status(400).send({
-      errors: validationResult.error.format()
-    })
+      errors: validationResult.error.format(),
+    });
   }
 
   const data = validationResult.data;
-  const userId = getAuthenticatedId(req); 
+  const userId = getAuthenticatedId(req, res);
 
   const newQuestion = new Question({
     user_id: userId,
@@ -32,15 +34,15 @@ router.post("/", upload.single("file"), async (req, res) => {
     answer: data.answer,
     explanation: data.explanation,
     choices: data.type === "multiple-choice" ? JSON.parse(data.choices) : [],
-  })
-  
+  });
+
   let result = null;
 
   if (file) {
     result = await cloudinary.uploader.upload(file.path, {
       folder: "EduGuide+/questions",
       resource_type: "auto",
-    })
+    });
 
     fs.unlink(file.path, (err) => {
       if (err) console.error("Failed to delete file:", err);
@@ -51,27 +53,27 @@ router.post("/", upload.single("file"), async (req, res) => {
     newQuestion.media = {
       url: result.secure_url,
       public_id: result.public_id,
-      type: result.resource_type
-    }
+      type: result.resource_type,
+    };
   }
 
   const savedQuestion = await newQuestion.save();
-  const question = await Question.findOne({ _id: savedQuestion._id })
+  const question = await Question.findOne({ _id: savedQuestion._id });
 
   return res.status(200).send({
     message: "successful!",
     question: question,
-  })
+  });
 });
 
 router.get("/", async (req, res) => {
-  const userId = getAuthenticatedId(req);
-  const questions = await Question.find({ user_id: userId })
+  const userId = getAuthenticatedId(req, res);
+  const questions = await Question.find({ user_id: userId });
 
   return res.status(200).send({
     message: "successful!",
     questions: questions,
-  })
+  });
 });
 
 router.put("/:id", upload.single("file"), async (req, res) => {
@@ -82,8 +84,8 @@ router.put("/:id", upload.single("file"), async (req, res) => {
 
   if (!validationResult.success) {
     return res.status(400).send({
-      errors: validationResult.error.format()
-    })
+      errors: validationResult.error.format(),
+    });
   }
 
   const data = validationResult.data;
@@ -95,7 +97,8 @@ router.put("/:id", upload.single("file"), async (req, res) => {
   question.question = data.question;
   question.answer = data.answer;
   question.explanation = data.explanation;
-  question.choices = data.type === "multiple-choice" ? JSON.parse(data.choices) : [];
+  question.choices =
+    data.type === "multiple-choice" ? JSON.parse(data.choices) : [];
 
   if (file) {
     if (question.media && question.media.public_id) {
@@ -109,7 +112,7 @@ router.put("/:id", upload.single("file"), async (req, res) => {
     const result = await cloudinary.uploader.upload(file.path, {
       folder: "EduGuide+/questions",
       resource_type: "auto",
-    })
+    });
 
     fs.unlink(file.path, (err) => {
       if (err) console.error("Failed to delete file:", err);
@@ -118,25 +121,24 @@ router.put("/:id", upload.single("file"), async (req, res) => {
     question.media = {
       url: result.secure_url,
       public_id: result.public_id,
-      type: result.resource_type
-    }
-  } 
+      type: result.resource_type,
+    };
+  }
 
   const updatedQuestion = await question.save();
 
   return res.status(200).send({
     message: "Updated successfully!",
     question: updatedQuestion,
-  })
+  });
 });
 
 router.delete("/:id", async (req, res) => {
   const questionId = req.params.id;
   await Question.findOneAndDelete({ _id: questionId });
   return res.status(200).send({
-    message: "Deleted successfully."
-  })
+    message: "Deleted successfully.",
+  });
 });
-
 
 export default router;
