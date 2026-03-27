@@ -82,7 +82,10 @@ router.get("/code/:code", async (req, res) => {
 
   let handbook = await Handbook.findOne({ code: code }).populate({
     path: "topics",
-    populate: [{ path: "sections" }, { path: "active_quiz" }],
+    populate: [
+      { path: "sections" },
+      { path: "active_quiz", populate: [{ path: "questions" }] },
+    ],
   });
 
   if (!handbook) {
