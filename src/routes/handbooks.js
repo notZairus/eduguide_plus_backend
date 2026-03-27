@@ -30,81 +30,52 @@ router.get("/", async (req, res) => {
   });
 });
 
-router.put(
-  "/",
-  upload.fields([
-    { name: "thumbnail", maxCount: 1 },
-    { name: "logo", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    const userId = getAuthenticatedId(req, res);
+router.put("/", upload.single("logo"), async (req, res) => {
+  const userId = getAuthenticatedId(req, res);
 
-    const body = req.body;
-    const thumbnail = req.files.thumbnail ? req.files.thumbnail[0] : null;
-    const logo = req.files.logo ? req.files.logo[0] : null;
+  const body = req.body;
+  const logo = req.file ?? null;
 
-    const handbook = await Handbook.findOne({ user_id: userId });
+  const handbook = await Handbook.findOne({ user_id: userId });
 
-    if (!handbook) {
-      return res.status(404).send({
-        message: "Handbook not found",
-      });
-    }
-
-    if (thumbnail) {
-      if (handbook.thumbnail && handbook.thumbnail.url) {
-        await cloudinary.uploader.destroy(handbook.thumbnail.public_id);
-      }
-
-      const res = await cloudinary.uploader.upload(thumbnail.path, {
-        folder: "EduGuide+/handbooks/thumbnails",
-        resource_type: "auto",
-      });
-
-      fs.unlink(thumbnail.path, (err) => {
-        if (err) console.error("Failed to delete file:", err);
-      });
-
-      handbook.thumbnail = {
-        url: res.secure_url,
-        public_id: res.public_id,
-        type: res.resource_type,
-      };
-    }
-
-    if (logo) {
-      if (handbook.logo && handbook.logo.url) {
-        await cloudinary.uploader.destroy(handbook.logo.public_id);
-      }
-
-      const res = await cloudinary.uploader.upload(logo.path, {
-        folder: "EduGuide+/handbooks/logos",
-        resource_type: "auto",
-      });
-
-      fs.unlink(logo.path, (err) => {
-        if (err) console.error("Failed to delete file:", err);
-      });
-
-      handbook.logo = {
-        url: res.secure_url,
-        public_id: res.public_id,
-        type: res.resource_type,
-      };
-    }
-
-    for (const key in body) {
-      handbook[key] = body[key];
-    }
-
-    await handbook.save();
-
-    return res.status(200).send({
-      message: "successful!",
-      handbook: handbook,
+  if (!handbook) {
+    return res.status(404).send({
+      message: "Handbook not found",
     });
-  },
-);
+  }
+
+  if (logo) {
+    if (handbook.logo && handbook.logo.url) {
+      await cloudinary.uploader.destroy(handbook.logo.public_id);
+    }
+
+    const res = await cloudinary.uploader.upload(logo.path, {
+      folder: "EduGuide+/handbooks/logos",
+      resource_type: "auto",
+    });
+
+    fs.unlink(logo.path, (err) => {
+      if (err) console.error("Failed to delete file:", err);
+    });
+
+    handbook.logo = {
+      url: res.secure_url,
+      public_id: res.public_id,
+      type: res.resource_type,
+    };
+  }
+
+  for (const key in body) {
+    handbook[key] = body[key];
+  }
+
+  await handbook.save();
+
+  return res.status(200).send({
+    message: "successful!",
+    handbook: handbook,
+  });
+});
 
 router.get("/code/:code", async (req, res) => {
   const code = req.params.code;
@@ -120,23 +91,27 @@ router.get("/code/:code", async (req, res) => {
     });
   }
 
-  const topics = handbook.topics.map((topic) => {
-    const sections = topic.sections.map((section) => {
-      if (!section.content) {
-        return section;
-      }
+  const topics = handbook.topics
+    // .sort((a, b) => a.order - b.order)
+    .map((topic) => {
+      const sections = topic.sections
+        // .sort((a, b) => a.order - b.order)
+        .map((section) => {
+          if (!section.content) {
+            return section;
+          }
+
+          return {
+            ...section._doc,
+            content: jsonToHTML(section.content),
+          };
+        });
 
       return {
-        ...section._doc,
-        content: jsonToHTML(section.content),
+        ...topic._doc,
+        sections: sections,
       };
     });
-
-    return {
-      ...topic._doc,
-      sections: sections,
-    };
-  });
 
   return res.status(200).send({
     ...handbook._doc,

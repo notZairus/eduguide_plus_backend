@@ -7,8 +7,10 @@ import {
   generateRefreshToken,
 } from "../lib/helpers.js";
 import jwt from "jsonwebtoken";
-import Handbook from "../models/Handbook.js";
+import nodemailer from "nodemailer";
 import { nanoid } from "nanoid";
+import PendingUser from "../models/PendingUser.js";
+import Handbook from "../models/Handbook.js";
 
 const router = Router();
 
@@ -58,7 +60,7 @@ router.post("/login", async (req, res) => {
       middleName: user.middle_name,
       lastName: user.last_name,
       isAdmin: user.is_admin,
-    }
+    },
   });
 });
 
@@ -68,15 +70,36 @@ router.get("/logout", async (req, res) => {
   return res.sendStatus(200);
 });
 
+router.get("/me", async (req, res) => {
+  const accessToken = req.cookies.accessToken;
 
-router.post("/register", async (req, res) => {
+  if (!accessToken) {
+    return res.status(401).send({
+      user: null,
+    });
+  }
 
-  console.log(req.body)
+  const payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 
+  const user = await User.findById(payload.userId);
+
+  if (!user) return res.sendStatus(401);
+
+  return res.status(200).send({
+    user: {
+      id: user._id,
+      firstName: user.first_name,
+      middleName: user.middle_name,
+      lastName: user.last_name,
+      isAdmin: user.is_admin,
+    },
+  });
+});
+
+router.post("/validate-registration", async (req, res) => {
   const validationResult = registerSchema.safeParse(req.body);
 
   if (!validationResult.success) {
-    console.log(validationResult.error.format())
     return res.status(400).send({
       errors: validationResult.error.format(),
     });
@@ -84,12 +107,65 @@ router.post("/register", async (req, res) => {
 
   const data = validationResult.data;
 
-  const user = new User({
+  const existingUser = await User.findOne({ email: data.email });
+
+  if (existingUser) {
+    return res.send({
+      status: 409,
+      message: "User already exists",
+    });
+  }
+
+  await PendingUser.deleteOne({ email: data.email });
+
+  const verification_token = nanoid(10);
+
+  await PendingUser.create({
     email: data.email,
     password: data.password,
     first_name: data.firstName,
     middle_name: data.middleName,
     last_name: data.lastName,
+    verification_token: verification_token,
+  });
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "zairusb12@gmail.com",
+      pass: process.env.GMAIL_PASSWORD,
+    },
+  });
+
+  await transporter.sendMail({
+    to: data.email,
+    subject: "Your Verification Token",
+    text: `Your verification token is ${verification_token}`,
+  });
+
+  return res.send({
+    status: 200,
+    message: "verification token sent",
+  });
+});
+
+router.post("/verify-registration", async (req, res) => {
+  const { email, verification_token } = req.body;
+
+  const pendingUser = await PendingUser.findOne({ email, verification_token });
+
+  if (!pendingUser) {
+    return res.status(400).send({
+      message: "Invalid verification token",
+    });
+  }
+
+  const user = new User({
+    email: pendingUser.email,
+    password: pendingUser.password,
+    first_name: pendingUser.first_name,
+    middle_name: pendingUser.middle_name,
+    last_name: pendingUser.last_name,
     is_admin: false,
   });
 
@@ -103,86 +179,12 @@ router.post("/register", async (req, res) => {
     color: "#142e67",
   });
 
-  return res.status(200).send({
-    user: {
-      id: user.id,
-    },
-    message: "successful!",
-  });
-});
+  await PendingUser.deleteOne({ email, verification_token });
 
-router.get("/me", async (req, res) => {
-  const accessToken = req.cookies.accessToken;
-
-  if (!accessToken) {
-    return res.status(401).send({
-      user: null,
-    });
-  }
-
-  const payload = jwt.verify(
-    accessToken,
-    process.env.ACCESS_TOKEN_SECRET,
-  );
-
-  const user = await User.findById(payload.userId);
-
-  if (!user) return res.sendStatus(401);
-
-  return res.status(200).send({
-    user: {
-      id: user._id,
-      firstName: user.first_name,
-      middleName: user.middle_name,
-      lastName: user.last_name,
-      isAdmin: user.is_admin,
-    }
+  return res.send({
+    status: 200,
+    message: "User registered successfully",
   });
 });
 
 export default router;
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// router.post("/refresh", async (req, res) => {
-//   interface JwtPayload {
-//     userId: string;
-//     iat: number;
-//     exp: number;
-//   }
-
-//   const refreshToken = req.cookies.refreshToken;
-
-//   if (!refreshToken) {
-//     return res.sendStatus(401);
-//   }
-
-//   let payload: JwtPayload;
-
-//   try {
-//     payload = jwt.verify(
-//       refreshToken,
-//       process.env.REFRESH_TOKEN_SECRET as string,
-//     ) as JwtPayload;
-//   } catch (err) {
-//     return res.sendStatus(403);
-//   }
-
-//   const user = await User.findById(payload.userId);
-
-//   if (!user) {
-//     return res.sendStatus(401);
-//   }
-
-//   const newAccessToken = generateAcessToken({ userId: user.id });
-
-//   res.cookie("accessToken", newAccessToken, {
-//     httpOnly: true,
-//     secure: false, // set true in production with HTTPS
-//     sameSite: "lax",
-//   });
-
-//   return res.status(200).json({
-//     message: "token refreshed",
-//   });
-// });
