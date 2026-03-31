@@ -95,10 +95,10 @@ router.get("/code/:code", async (req, res) => {
   }
 
   const topics = handbook.topics
-    // .sort((a, b) => a.order - b.order)
+    .sort((a, b) => a.order - b.order)
     .map((topic) => {
       const sections = topic.sections
-        // .sort((a, b) => a.order - b.order)
+        .sort((a, b) => a.order - b.order)
         .map((section) => {
           if (!section.content) {
             return section;

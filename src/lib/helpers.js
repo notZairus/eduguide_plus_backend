@@ -30,8 +30,30 @@ export function generateRefreshToken(user) {
   });
 }
 
+export function getAccessTokenFromRequest(req) {
+  const cookieToken = req.cookies?.accessToken;
+
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  const authHeader = req.headers?.authorization;
+
+  if (!authHeader) {
+    return null;
+  }
+
+  const [scheme, token] = authHeader.split(" ");
+
+  if (scheme?.toLowerCase() !== "bearer" || !token) {
+    return null;
+  }
+
+  return token;
+}
+
 export function getAuthenticatedId(req, res = null) {
-  const accessToken = req.cookies.accessToken;
+  const accessToken = getAccessTokenFromRequest(req);
 
   if (!accessToken) {
     if (res) {
@@ -40,9 +62,17 @@ export function getAuthenticatedId(req, res = null) {
     return null;
   }
 
-  const payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+  try {
+    const payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 
-  return payload.userId;
+    return payload.userId;
+  } catch (_err) {
+    if (res) {
+      return res.sendStatus(401);
+    }
+
+    return null;
+  }
 }
 
 export function jsonToHTML(content) {

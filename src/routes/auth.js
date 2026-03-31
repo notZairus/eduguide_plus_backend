@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { loginSchema, registerSchema } from "../validators/auth.validator.js";
+import {
+  forgotPasswordRequestSchema,
+  forgotPasswordResetSchema,
+  loginSchema,
+  registerSchema,
+} from "../validators/auth.validator.js";
 import User from "../models/User.js";
 import {
   compareHashedPassword,
@@ -11,8 +16,20 @@ import nodemailer from "nodemailer";
 import { nanoid } from "nanoid";
 import PendingUser from "../models/PendingUser.js";
 import Handbook from "../models/Handbook.js";
+import PendingUserPasswordReset from "../models/PendingUserPasswordReset.js";
 
 const router = Router();
+const RESET_TOKEN_TTL_MINUTES = 15;
+
+function createMailTransporter() {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "zairusb12@gmail.com",
+      pass: process.env.GMAIL_PASSWORD,
+    },
+  });
+}
 
 router.post("/login", async (req, res) => {
   const validationResult = loginSchema.safeParse(req.body);
@@ -129,13 +146,7 @@ router.post("/validate-registration", async (req, res) => {
     verification_token: verification_token,
   });
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "zairusb12@gmail.com",
-      pass: process.env.GMAIL_PASSWORD,
-    },
-  });
+  const transporter = createMailTransporter();
 
   await transporter.sendMail({
     to: data.email,
@@ -146,6 +157,92 @@ router.post("/validate-registration", async (req, res) => {
   return res.send({
     status: 200,
     message: "verification token sent",
+  });
+});
+
+router.post("/forgot-password/request", async (req, res) => {
+  const validationResult = forgotPasswordRequestSchema.safeParse(req.body);
+
+  if (!validationResult.success) {
+    return res.status(400).send({
+      errors: validationResult.error.format(),
+    });
+  }
+
+  const data = validationResult.data;
+
+  const user = await User.findOne({ email: data.email });
+
+  if (!user) {
+    return res.status(200).send({
+      message:
+        "If this account exists, a password reset token has been sent to your email.",
+    });
+  }
+
+  await PendingUserPasswordReset.deleteOne({ email: data.email });
+
+  const verification_token = nanoid(10);
+  const expires_at = new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60000);
+
+  await PendingUserPasswordReset.create({
+    email: data.email,
+    verification_token,
+    expires_at,
+  });
+
+  const transporter = createMailTransporter();
+
+  await transporter.sendMail({
+    to: data.email,
+    subject: "Password Reset Token",
+    text: `Your password reset token is ${verification_token}. It expires in ${RESET_TOKEN_TTL_MINUTES} minutes.`,
+  });
+
+  return res.status(200).send({
+    message:
+      "If this account exists, a password reset token has been sent to your email.",
+  });
+});
+
+router.post("/forgot-password/reset", async (req, res) => {
+  const validationResult = forgotPasswordResetSchema.safeParse(req.body);
+
+  if (!validationResult.success) {
+    return res.status(400).send({
+      errors: validationResult.error.format(),
+    });
+  }
+
+  const data = validationResult.data;
+
+  const pendingReset = await PendingUserPasswordReset.findOne({
+    email: data.email,
+    verification_token: data.verificationToken,
+    expires_at: { $gt: new Date() },
+  });
+
+  if (!pendingReset) {
+    return res.status(400).send({
+      message: "Invalid or expired password reset token",
+    });
+  }
+
+  const user = await User.findOne({ email: data.email });
+
+  if (!user) {
+    return res.status(404).send({
+      message: "User not found",
+    });
+  }
+
+  user.password = data.newPassword;
+  await user.save();
+
+  await PendingUserPasswordReset.deleteMany({ email: data.email });
+
+  return res.status(200).send({
+    message: "Password reset successfully",
   });
 });
 

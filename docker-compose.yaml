@@ -1,4 +1,4 @@
-services: 
+services:
   backend:
     build: .
     ports:
@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     depends_on:
-    - mongodb 
+      - mongodb
     restart: unless-stopped
   mongodb:
     image: mongo:latest

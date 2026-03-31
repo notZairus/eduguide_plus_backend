@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 const router = Router();
 
 router.patch("/me", async (req, res) => {
-  const data = req.body;
+  const dataaa = req.body;
   const authenticated = getAuthenticatedId(req, res);
   const user = await User.findById(authenticated);
 
@@ -16,8 +16,8 @@ router.patch("/me", async (req, res) => {
     });
   }
 
-  Object.keys(data).forEach((key) => {
-    user[key] = data[key];
+  Object.keys(dataaa).forEach((key) => {
+    user[key] = dataaa[key];
   });
 
   const updatedUser = await user.save();
