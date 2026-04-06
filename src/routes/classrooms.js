@@ -6,6 +6,7 @@ import MobileUser from "../models/MobileUser.js";
 import {
   createClassroomSchema,
   joinClassroomParamsSchema,
+  updateClassroomSchema,
 } from "../validators/classroom.validator.js";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -192,6 +193,56 @@ router.post("/:code/join", async (req, res) => {
   });
 });
 
+router.post("/:classroomId/leave", async (req, res) => {
+  const userId = getAuthenticatedId(req, res);
+
+  if (!userId) return;
+
+  const user = await MobileUser.findById(userId);
+
+  if (!user) {
+    return res.status(404).send({
+      message: "Mobile user not found",
+    });
+  }
+
+  if (user.role !== "student") {
+    return res.status(403).send({
+      message: "Only students can leave classrooms",
+    });
+  }
+
+  const classroom = await Classroom.findOne({
+    _id: req.params.classroomId,
+    is_active: true,
+  });
+
+  if (!classroom) {
+    return res.status(404).send({
+      message: "Classroom not found",
+    });
+  }
+
+  const memberIndex = classroom.members.findIndex(
+    (member) =>
+      member.user_id.toString() === user._id.toString() &&
+      member.role === "student",
+  );
+
+  if (memberIndex === -1) {
+    return res.status(409).send({
+      message: "You are not a member of this classroom",
+    });
+  }
+
+  classroom.members.splice(memberIndex, 1);
+  await classroom.save();
+
+  return res.status(200).send({
+    message: "Left classroom successfully",
+  });
+});
+
 router.get("/:classroomId/members", async (req, res) => {
   const userId = getAuthenticatedId(req, res);
 
@@ -227,6 +278,100 @@ router.get("/:classroomId/members", async (req, res) => {
 
   return res.status(200).send({
     classroom,
+  });
+});
+
+router.patch("/:classroomId", async (req, res) => {
+  const userId = getAuthenticatedId(req, res);
+
+  if (!userId) return;
+
+  const user = await MobileUser.findById(userId);
+
+  if (!user) {
+    return res.status(404).send({
+      message: "Mobile user not found",
+    });
+  }
+
+  if (user.role !== "instructor") {
+    return res.status(403).send({
+      message: "Only instructors can update classrooms",
+    });
+  }
+
+  const validationResult = updateClassroomSchema.safeParse(req.body);
+
+  if (!validationResult.success) {
+    return res.status(400).send({
+      errors: validationResult.error.format(),
+    });
+  }
+
+  const classroom = await Classroom.findOne({
+    _id: req.params.classroomId,
+    owner_id: user._id,
+    is_active: true,
+  });
+
+  if (!classroom) {
+    return res.status(404).send({
+      message: "Classroom not found",
+    });
+  }
+
+  if (typeof validationResult.data.name === "string") {
+    classroom.name = validationResult.data.name;
+  }
+
+  if (typeof validationResult.data.description === "string") {
+    classroom.description = validationResult.data.description;
+  }
+
+  await classroom.save();
+
+  return res.status(200).send({
+    message: "Classroom updated successfully",
+    classroom,
+  });
+});
+
+router.delete("/:classroomId", async (req, res) => {
+  const userId = getAuthenticatedId(req, res);
+
+  if (!userId) return;
+
+  const user = await MobileUser.findById(userId);
+
+  if (!user) {
+    return res.status(404).send({
+      message: "Mobile user not found",
+    });
+  }
+
+  if (user.role !== "instructor") {
+    return res.status(403).send({
+      message: "Only instructors can delete classrooms",
+    });
+  }
+
+  const classroom = await Classroom.findOne({
+    _id: req.params.classroomId,
+    owner_id: user._id,
+    is_active: true,
+  });
+
+  if (!classroom) {
+    return res.status(404).send({
+      message: "Classroom not found",
+    });
+  }
+
+  classroom.is_active = false;
+  await classroom.save();
+
+  return res.status(200).send({
+    message: "Classroom deleted successfully",
   });
 });
 
