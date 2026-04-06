@@ -5,10 +5,12 @@ const connectDB = async () => {
   if (!MONGO_URI) return;
 
   try {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(MONGO_URI, {
+      tls: true,
+    });
     console.log("✅ MongoDB connected");
   } catch (error) {
-    console.error("❌ MongoDB connection failed:");
+    console.error("❌ MongoDB connection failed:", error.message);
     process.exit(1);
   }
 };
