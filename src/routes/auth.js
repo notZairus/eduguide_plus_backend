@@ -79,6 +79,7 @@ function createResetEmailHtml(token, expiresInMinutes = "15") {
 }
 
 router.post("/login", async (req, res) => {
+  console.log("sdasdsad");
   const validationResult = loginSchema.safeParse(req.body);
 
   if (!validationResult.success) {
@@ -100,20 +101,23 @@ router.post("/login", async (req, res) => {
   }
 
   const accessToken = generateAcessToken({ userId: user.id });
-
   const refreshToken = generateRefreshToken({ userId: user.id });
+
+  const isProduction = process.env.NODE_ENV === "production";
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction, // must be true in production (HTTPS)
+    sameSite: isProduction ? "none" : "lax", // cross-site cookie for production
+    maxAge: 1000 * 60 * 60 * 4, // optional, 15 minutes
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/refresh",
+    maxAge: 1000 * 60 * 60 * 24 * 7, // optional, 7 days
   });
 
   return res.status(200).json({
