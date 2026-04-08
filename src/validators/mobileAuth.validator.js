@@ -74,3 +74,16 @@ export const forgotPasswordResetSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .max(32, "Password must be at most 32 characters"),
 });
+
+export const changePasswordSchema = z.object({
+  currentPassword: z
+    .string()
+    .trim()
+    .min(8, "Current password must be at least 8 characters")
+    .max(32, "Current password must be at most 32 characters"),
+  newPassword: z
+    .string()
+    .trim()
+    .min(8, "Password must be at least 8 characters")
+    .max(32, "Password must be at most 32 characters"),
+});

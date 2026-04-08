@@ -12,6 +12,7 @@ import {
   getAuthenticatedId,
 } from "../lib/helpers.js";
 import {
+  changePasswordSchema,
   forgotPasswordRequestSchema,
   forgotPasswordResetSchema,
   mobileLoginSchema,
@@ -330,6 +331,54 @@ router.post("/forgot-password/reset", async (req, res) => {
 
   return res.status(200).send({
     message: "Password reset successfully",
+  });
+});
+
+router.post("/change-password", async (req, res) => {
+  const userId = getAuthenticatedId(req, res);
+
+  if (!userId) return;
+
+  const validationResult = changePasswordSchema.safeParse(req.body);
+
+  if (!validationResult.success) {
+    return res.status(400).send({
+      errors: validationResult.error.format(),
+    });
+  }
+
+  const data = validationResult.data;
+
+  if (data.currentPassword === data.newPassword) {
+    return res.status(400).send({
+      message: "New password must be different from current password",
+    });
+  }
+
+  const user = await MobileUser.findById(userId);
+
+  if (!user) {
+    return res.status(404).send({
+      message: "Mobile user not found",
+    });
+  }
+
+  const isCurrentPasswordValid = await compareHashedPassword(
+    data.currentPassword,
+    user.password,
+  );
+
+  if (!isCurrentPasswordValid) {
+    return res.status(400).send({
+      message: "Current password is incorrect",
+    });
+  }
+
+  user.password = data.newPassword;
+  await user.save();
+
+  return res.status(200).send({
+    message: "Password updated successfully",
   });
 });
 
