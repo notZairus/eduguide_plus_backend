@@ -23,6 +23,14 @@ const router = Router();
 
 const RESET_TOKEN_TTL_MINUTES = 15;
 
+function getCookieOptions(isProduction) {
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+}
+
 function createMailTransporter() {
   return nodemailer.createTransport({
     service: "gmail",
@@ -201,18 +209,15 @@ router.post("/login", async (req, res) => {
   const refreshToken = generateRefreshToken({ userId: user.id });
 
   const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = getCookieOptions(isProduction);
 
   res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    secure: isProduction, // must be true in production (HTTPS)
-    sameSite: isProduction ? "none" : "lax", // cross-site cookie for production
+    ...cookieOptions,
     maxAge: 1000 * 60 * 60 * 24 * 365, // optional, 15 minutes
   });
 
   res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    ...cookieOptions,
     path: "/refresh",
     maxAge: 1000 * 60 * 60 * 24 * 365 * 2, // optional, 7 days
   });
@@ -408,8 +413,14 @@ router.get("/me", async (req, res) => {
 });
 
 router.get("/logout", async (req, res) => {
-  res.clearCookie("refreshToken", { path: "/mobile-auth/refresh" });
-  res.clearCookie("accessToken");
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = getCookieOptions(isProduction);
+
+  res.clearCookie("refreshToken", {
+    ...cookieOptions,
+    path: "/refresh",
+  });
+  res.clearCookie("accessToken", cookieOptions);
   return res.sendStatus(200);
 });
 
